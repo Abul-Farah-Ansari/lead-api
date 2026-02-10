@@ -1,35 +1,24 @@
-require("dotenv").config();
 const express = require("express");
-const nodemailer = require("nodemailer");
 const cors = require("cors");
+const { Resend } = require("resend");
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 app.get("/", (req, res) => {
   res.send("Lead API Running");
 });
 
 app.post("/send-lead", async (req, res) => {
-  const { name, phone, message } = req.body;
-
-  if (!name || !phone) {
-    return res.status(400).json({ success: false, msg: "Missing fields" });
-  }
-
   try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.APP_PASS,
-      },
-    });
+    const { name, phone, message } = req.body;
 
-    await transporter.sendMail({
-      from: `"Website Lead" <${process.env.EMAIL}>`,
-      to: process.env.EMAIL,
+    await resend.emails.send({
+      from: "Website Lead <onboarding@resend.dev>",
+      to: "yourgmail@gmail.com",   // <-- put your receiving email
       subject: "New Website Lead 🚀",
       html: `
         <h2>New Lead Received</h2>
@@ -40,11 +29,11 @@ app.post("/send-lead", async (req, res) => {
     });
 
     res.json({ success: true });
-
   } catch (err) {
     console.log(err);
     res.status(500).json({ success: false });
   }
 });
 
-app.listen(5000, () => console.log("Server running on http://localhost:5000"));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log("Server running"));
